@@ -32,6 +32,6 @@ def rotate(image):
     return rotated
 
 def crop(image, start_x, end_x, start_y, end_y):
-    cropped = image[start_x:end_x, start_y:end_y]
+    cropped = image[start_y:end_y, start_x:end_x]
 
     return cropped
