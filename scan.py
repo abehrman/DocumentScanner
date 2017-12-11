@@ -1,13 +1,13 @@
-from transform import four_point_transform
-import imutils
-from PIL import Image
-import pytesseract
+import argparse
 import os
 
-from skimage.filters import threshold_adaptive
-import numpy as np
-import argparse
 import cv2
+import pytesseract
+from PIL import Image
+from skimage.filters import threshold_adaptive
+
+import imutils
+from transform import four_point_transform
 
 
 def OCR(image, box):
@@ -17,24 +17,9 @@ def OCR(image, box):
     os.remove(text_filename)
     return text
 
-if __name__ == "__main__":
 
-    #set path to OCR
-    pytesseract.pytesseract.tesseract_cmd = r"C:\Users\ABehrman\Programming\Python\DocumentScanner\tess\tesseract.exe"
-
-    # construct the argument parser and parse the arguments
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-i", "--image", required=True,
-                    help="path to input image to be OCR'd")
-    ap.add_argument("-p", "--preprocess", type=str, default="blur",
-                    help="type of preprocessing to be done")
-    ap.add_argument("-s", "--straighten", type=bool, default=True,
-                    help="option to straighted image, True/False")
-    args = vars(ap.parse_args())
-    # load the image and compute the ratio of the old height
-    # to the new height, clone it, and resize it
-    image = cv2.imread(args["image"])
-    straighten = args['straighten']
+def scan_document(image, straighten, preprocess):
+    image = cv2.imread(image)
     orig = image.copy()
 
 
@@ -101,10 +86,10 @@ if __name__ == "__main__":
     #cv2.waitKey(5000)
     #cv2.destroyAllWindows()
 
-    if args["preprocess"] == "thresh":
+    if preprocess == "thresh":
         image = cv2.threshold(image, 0, 255,
                              cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-    elif args["preprocess"] == "blur":
+    elif preprocess == "blur":
         image = cv2.medianBlur(image, 3)
 
     ##filename = "{}.png".format(os.getpid())
@@ -133,6 +118,21 @@ if __name__ == "__main__":
     tel = OCR(image, {'start_x': start_x, 'end_x': end_x, 'start_y': 610, 'end_y': 675})
     cell = OCR(image, {'start_x': start_x, 'end_x': end_x, 'start_y': 675, 'end_y': 740})
     email = OCR(image, {'start_x': start_x, 'end_x': end_x, 'start_y': 740, 'end_y': 805})
+
+    cell = cell[2:].translate({ord(c): None for c in '.'})
+    tel = tel[2:].translate({ord(c): None for c in '.'})
+
+    scan_results = {
+        'name': name,
+        'title': title,
+        'role': role,
+        'dept': dept,
+        'street': street,
+        'cityStateZip': cityStateZip,
+        'tel': tel,
+        'cell': cell,
+        'email': email
+    }
 
     print("""
 name:\t{0}
@@ -182,3 +182,24 @@ email:\t{8}
     #cv2.imshow("Output", warped)
     #cv2.waitKey(5000)
     #cv2.destroyAllWindows()
+
+    return scan_results
+
+
+if __name__ == "__main__":
+    # set path to OCR
+    #    pytesseract.pytesseract.tesseract_cmd = r"C:\Users\ABehrman\Programming\Python\DocumentScanner\tess\tesseract.exe"
+
+    # construct the argument parser and parse the arguments
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-i", "--image", required=True,
+                    help="path to input image to be OCR'd")
+    ap.add_argument("-p", "--preprocess", type=str, default="blur",
+                    help="type of preprocessing to be done")
+    ap.add_argument("-s", "--straighten", type=bool, default=True,
+                    help="option to straighted image, True/False")
+    args = vars(ap.parse_args())
+    # load the image and compute the ratio of the old height
+    # to the new height, clone it, and resize it
+
+    scan_document(args["image"], args['straighten'], args["preprocess"])
