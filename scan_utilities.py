@@ -111,4 +111,4 @@ if __name__ == "__main__":
     # load the image and compute the ratio of the old height
     # to the new height, clone it, and resize it
 
-    scan_document(args["image"], args['straighten'], args["preprocess"])
+    prepare_image(args["image"], args['straighten'], args["preprocess"])

@@ -1,6 +1,14 @@
+from tkinter import *
+from tkinter import messagebox
+
+import cv2
+from PIL import Image
+from PIL import ImageTk
+
+import scan_utilities
+
 """Rect Tracker class for Python Tkinter Canvas"""
 boxes = []
-
 
 def groups(glist, numPerGroup=2):
     result = []
@@ -135,16 +143,15 @@ class popupWindow(object):
 
 
 def main():
+    global boxes
     canv = Canvas(width=500, height=500)
-    canv.create_rectangle(50, 50, 250, 150, fill='red')
+    img = Image.open('biz_card_prepped.png')
+    tkImg = ImageTk.PhotoImage(img)
+    canv.config(width=tkImg.width(), height=tkImg.height())
+    canv.create_image((tkImg.width() / 2, tkImg.height() / 2), image=tkImg)
     canv.pack(fill=BOTH, expand=YES)
 
     rect = RectTracker(canv)
-    # draw some base rectangles
-    rect.draw([50, 50], [250, 150], fill='red', tags=('red', 'box'))
-    rect.draw([300, 300], [400, 450], fill='green', tags=('gre', 'box'))
-
-    # just for fun
     x, y = None, None
 
     def cool_design(event):
@@ -174,10 +181,13 @@ def main():
 
     mainloop()
 
+    boxes = scan_utilities.process_image(cv2.imread('biz_card_prepped.png'), boxes)
+    message = []
+
+    for box in boxes:
+        message.append('{}: {}'.format(box['name'], box['value']))
+
+    messagebox.showinfo('Fields', '\n'.join(message))
 
 if __name__ == '__main__':
-    try:
-        from tkinter import *
-    except ImportError:
-        from Tkinter import *
     main()
