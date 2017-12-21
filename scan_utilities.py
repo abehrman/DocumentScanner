@@ -4,7 +4,6 @@ import os
 import cv2
 import pytesseract
 from PIL import Image
-from skimage.filters import threshold_local
 
 import imutils
 from transform import four_point_transform
@@ -81,7 +80,7 @@ def prepare_image(image, straighten, preprocess):
         # convert the warped image to grayscale, then threshold it
         # to give it that 'black and white' paper effect
         warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-        #warped = threshold_local(warped, 251, offset=10)
+        # warped = threshold_local(warped, 15, offset=10)
         warped = warped.astype("uint8") * 255
 
         image = warped
@@ -92,7 +91,7 @@ def prepare_image(image, straighten, preprocess):
     elif preprocess == "blur":
         image = cv2.medianBlur(image, 3)
 
-    image = imutils.resize(image, height=500)
+    image = imutils.resize(image, height=1000)
 
     filename = "{}_prepped.png".format(os.getpid())
     cv2.imwrite(filename, image)
