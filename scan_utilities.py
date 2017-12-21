@@ -4,7 +4,7 @@ import os
 import cv2
 import pytesseract
 from PIL import Image
-from skimage.filters import threshold_adaptive
+from skimage.filters import threshold_local
 
 import imutils
 from transform import four_point_transform
@@ -13,8 +13,25 @@ from transform import four_point_transform
 def OCR(image, box):
     text_filename = "{}_text.png".format(os.getpid())
     cv2.imwrite(text_filename, imutils.crop(image, **box))
-    text = pytesseract.image_to_string(Image.open(text_filename))
+    cv2.imshow(text_filename, cv2.imread(text_filename))
+    cv2.waitKey(1000)
+    cv2.destroyWindow(text_filename)
+    text = pytesseract.image_to_string(Image.open(text_filename)).split('\n')
     os.remove(text_filename)
+    if isinstance(text, list):
+        for line in text:
+            try:
+                line.encode('ascii')
+                return line
+            except:
+                pass
+
+        return "bad read"
+
+    return text
+
+
+
     return text
 
 
@@ -64,7 +81,7 @@ def prepare_image(image, straighten, preprocess):
         # convert the warped image to grayscale, then threshold it
         # to give it that 'black and white' paper effect
         warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-        warped = threshold_adaptive(warped, 251, offset=10)
+        #warped = threshold_local(warped, 251, offset=10)
         warped = warped.astype("uint8") * 255
 
         image = warped
@@ -74,6 +91,8 @@ def prepare_image(image, straighten, preprocess):
                               cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
     elif preprocess == "blur":
         image = cv2.medianBlur(image, 3)
+
+    image = imutils.resize(image, height=500)
 
     filename = "{}_prepped.png".format(os.getpid())
     cv2.imwrite(filename, image)
@@ -89,8 +108,12 @@ def process_image(image, boxes):
     # print(text)
 
     for box in boxes:
-        box['value'] = OCR(image, {'start_x': box['start'][0], 'end_x': box['end'][0], 'start_y': box['start'][1],
-                                   'end_y': box['end'][1]})
+        box['value'] = OCR(image, {'start_x': int(box['start'][0]),
+                                   'end_x': int(box['end'][0]),
+                                   'start_y': int(box['start'][1]),
+                                   'end_y': int(box['end'][1])})
+
+        print('{}: {}'.format(box['name'],box['value']))
 
     return boxes
 

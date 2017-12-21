@@ -7,6 +7,7 @@ from PIL import ImageTk
 import argparse
 
 import scan_utilities
+import pandas as pd
 
 """Rect Tracker class for Python Tkinter Canvas"""
 boxes = []
@@ -71,7 +72,7 @@ class RectTracker:
         self._command(self.start, (event.x, event.y))
 
     def __stop(self, event):
-        label = popupWindow(self.canvas, self.start, event.x, event.y)
+        label = addBox(self.canvas, self.start, event.x, event.y)
 
         self.start = None
         self.canvas.delete(self.item)
@@ -119,7 +120,7 @@ class RectTracker:
         return items
 
 
-class popupWindow(object):
+class addBox(object):
     global boxes
 
     def __init__(self, master, start, eventx, eventy):
@@ -141,6 +142,23 @@ class popupWindow(object):
         boxes.append(box)
 
         self.top.destroy()
+
+class templateName(Frame):
+    def __init__(self, master=None):
+        Frame.__init__(self, master)
+        self.grid()
+        self.createWidgets()
+
+    def createWidgets(self):
+        self.l = Label(text="Enter template filename:")
+        self.l.grid()
+
+        self.e = Entry()
+        self.e.grid()
+
+        self.OkButton = Button(text='OK', width=25, command=self.quit)
+        self.OkButton.grid()
+
 
 
 def Main(imgFile):
@@ -172,13 +190,24 @@ def Main(imgFile):
 
     mainloop()
 
-    boxes = scan_utilities.process_image(cv2.imread(imgFile), boxes)
-    message = []
+    templateWindow = templateName()
+    mainloop()
 
-    for box in boxes:
-        message.append('{}: {}'.format(box['name'], box['value']))
+    print(boxes)
+    filename = templateWindow.e.get()
+    boxes_df = pd.DataFrame(boxes)
+    boxes_df.to_csv('templates/' + filename + '.csv')
 
-    messagebox.showinfo('Fields', '\n'.join(message))
+
+    #boxes = scan_utilities.process_image(cv2.imread(imgFile), boxes)
+    #message = []
+
+    #templateFile = open('templates/' + filename, 'w')
+
+    #for box in boxes:
+    #    message.append('{}: {}'.format(box['name'], box['value']))
+
+    #messagebox.showinfo('Fields', '\n'.join(message))
 
 if __name__ == '__main__':
     # set path to OCR
@@ -196,4 +225,4 @@ if __name__ == '__main__':
     # load the image and compute the ratio of the old height
     # to the new height, clone it, and resize it
     imgPrepped = scan_utilities.prepare_image(args["image"], args['straighten'], args["preprocess"])
-    main(imgPrepped)
+    Main(imgPrepped)
